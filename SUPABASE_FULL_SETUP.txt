@@ -1,0 +1,425 @@
+-- ============================================================
+-- AM PRO v2 — COMPLETE SUPABASE SQL SETUP
+-- Run this ONCE in your Supabase SQL Editor
+-- ============================================================
+
+-- ──────────────────────────────────────────────────────────
+-- EXTENSIONS
+-- ──────────────────────────────────────────────────────────
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+-- ──────────────────────────────────────────────────────────
+-- 1. USERS / PROFILES
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.users (
+  id            uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email         text UNIQUE,
+  name          text NOT NULL DEFAULT '',
+  username      text UNIQUE NOT NULL DEFAULT '',
+  gender        text DEFAULT '',
+  field         text DEFAULT '',
+  bio           text DEFAULT '',
+  avatar_url    text DEFAULT NULL,
+  banner_url    text DEFAULT NULL,
+  verified      boolean DEFAULT false,
+  online        boolean DEFAULT false,
+  last_seen     timestamptz DEFAULT now(),
+  points        integer DEFAULT 0,
+  rank_id       integer DEFAULT 1,
+  title_id      uuid DEFAULT NULL,
+  created_at    timestamptz DEFAULT now(),
+  updated_at    timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.users ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "users_select_all"  ON public.users;
+DROP POLICY IF EXISTS "users_update_own"  ON public.users;
+DROP POLICY IF EXISTS "users_insert_own"  ON public.users;
+DROP POLICY IF EXISTS "users_delete_own"  ON public.users;
+
+CREATE POLICY "users_select_all"  ON public.users FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY "users_update_own"  ON public.users FOR UPDATE TO authenticated USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+CREATE POLICY "users_insert_own"  ON public.users FOR INSERT TO authenticated WITH CHECK (auth.uid() = id);
+CREATE POLICY "users_delete_own"  ON public.users FOR DELETE TO authenticated USING (auth.uid() = id);
+
+-- ──────────────────────────────────────────────────────────
+-- 2. RANKS
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.ranks (
+  id            serial PRIMARY KEY,
+  name          text NOT NULL,
+  min_points    integer NOT NULL DEFAULT 0,
+  max_points    integer NOT NULL DEFAULT 100,
+  color         text NOT NULL DEFAULT '#8e8e93',
+  gradient_from text DEFAULT NULL,
+  gradient_to   text DEFAULT NULL,
+  glow_color    text DEFAULT NULL,
+  icon          text DEFAULT '⚔️',
+  badge_url     text DEFAULT NULL,
+  tier          integer NOT NULL DEFAULT 1,
+  created_at    timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.ranks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "ranks_select_all" ON public.ranks FOR SELECT TO anon, authenticated USING (true);
+
+-- Insert default ranks
+INSERT INTO public.ranks (name, min_points, max_points, color, gradient_from, gradient_to, glow_color, icon, tier) VALUES
+  ('Dust',        0,      99,    '#8e8e93', '#6e6e73', '#8e8e93', '#8e8e9366', '💨', 1),
+  ('Stone',       100,    249,   '#636366', '#48484a', '#636366', '#63636666', '🪨', 2),
+  ('Iron',        250,    499,   '#aeaeb2', '#8e8e93', '#c7c7cc', '#aeaeb266', '⚙️', 3),
+  ('Bronze',      500,    999,   '#a2845e', '#8e6a3e', '#cd9b6e', '#a2845e66', '🥉', 4),
+  ('Silver',      1000,   1999,  '#cfd3d6', '#b0b4b8', '#e8ebee', '#cfd3d666', '🥈', 5),
+  ('Gold',        2000,   3499,  '#ffcc00', '#e6b800', '#ffd60a', '#ffcc0066', '🥇', 6),
+  ('Platinum',    3500,   5999,  '#e5e5ea', '#d1d1d6', '#f2f2f7', '#e5e5ea66', '💿', 7),
+  ('Diamond',     6000,   9999,  '#007aff', '#0062cc', '#34aadc', '#007aff66', '💎', 8),
+  ('Emerald',     10000,  14999, '#34c759', '#28a745', '#50d97d', '#34c75966', '💚', 9),
+  ('Sapphire',    15000,  21999, '#5856d6', '#4040cc', '#7270e8', '#5856d666', '💙', 10),
+  ('Obsidian',    22000,  30999, '#1c1c1e', '#000000', '#3a3a3c', '#6e6e7366', '🌑', 11),
+  ('Mythic',      31000,  42999, '#ff2d55', '#d40032', '#ff6584', '#ff2d5566', '🔥', 12),
+  ('Legend',      43000,  59999, '#af52de', '#8944b8', '#c97bef', '#af52de66', '⚡', 13),
+  ('Master',      60000,  84999, '#5ac8fa', '#32ade6', '#70d7ff', '#5ac8fa66', '🎯', 14),
+  ('Grandmaster', 85000,  119999,'#ff9500', '#cc7700', '#ffb340', '#ff950066', '👑', 15),
+  ('Imperial',    120000, 169999,'#ffd60a', '#e6c200', '#ffe566', '#ffd60a66', '🏆', 16),
+  ('Royal',       170000, 249999,'#bf5af2', '#9a2fd4', '#d483ff', '#bf5af266', '👸', 17),
+  ('Founder',     250000, 9999999,'#64d2ff', '#0a84ff', '#64d2ff', '#64d2ff88', '🌟', 18)
+ON CONFLICT DO NOTHING;
+
+-- ──────────────────────────────────────────────────────────
+-- 3. TITLES (Legendary)
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.titles (
+  id            uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  name          text NOT NULL,
+  color         text NOT NULL DEFAULT '#ffffff',
+  glow_color    text DEFAULT NULL,
+  animation     text DEFAULT 'none',  -- none | pulse | shimmer | rainbow | fire | electric
+  gradient_from text DEFAULT NULL,
+  gradient_to   text DEFAULT NULL,
+  is_exclusive  boolean DEFAULT false,
+  created_by    integer DEFAULT 1,    -- admin id
+  created_at    timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.titles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "titles_select_all" ON public.titles FOR SELECT TO anon, authenticated USING (true);
+
+-- ──────────────────────────────────────────────────────────
+-- 4. USER TITLES (many-to-many)
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.user_titles (
+  id         uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  title_id   uuid NOT NULL REFERENCES public.titles(id) ON DELETE CASCADE,
+  granted_at timestamptz DEFAULT now(),
+  UNIQUE(user_id, title_id)
+);
+
+ALTER TABLE public.user_titles ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "user_titles_select_all" ON public.user_titles FOR SELECT TO anon, authenticated USING (true);
+
+-- ──────────────────────────────────────────────────────────
+-- 5. TASKS
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.tasks (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     uuid REFERENCES public.users(id) ON DELETE CASCADE,
+  title       text NOT NULL DEFAULT '',
+  body        text DEFAULT '',
+  link        text DEFAULT '',
+  points      integer DEFAULT 0,
+  status      text DEFAULT 'pending',  -- pending | submitted | approved | rejected
+  created_at  timestamptz DEFAULT now(),
+  updated_at  timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.tasks ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "tasks_select_own"           ON public.tasks;
+DROP POLICY IF EXISTS "tasks_insert_authenticated"  ON public.tasks;
+DROP POLICY IF EXISTS "tasks_delete_authenticated"  ON public.tasks;
+DROP POLICY IF EXISTS "tasks_update_own"            ON public.tasks;
+
+CREATE POLICY "tasks_select_own"           ON public.tasks FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "tasks_insert_authenticated" ON public.tasks FOR INSERT TO authenticated WITH CHECK (true);
+CREATE POLICY "tasks_delete_authenticated" ON public.tasks FOR DELETE TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "tasks_update_own"           ON public.tasks FOR UPDATE TO authenticated USING (auth.uid() = user_id);
+
+-- ──────────────────────────────────────────────────────────
+-- 6. TASK SUBMISSIONS
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.task_submissions (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  task_id     uuid NOT NULL REFERENCES public.tasks(id) ON DELETE CASCADE,
+  user_id     uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  note        text DEFAULT '',
+  proof_url   text DEFAULT NULL,
+  status      text DEFAULT 'pending',  -- pending | approved | rejected
+  reviewed_at timestamptz DEFAULT NULL,
+  created_at  timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.task_submissions ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "submissions_select_own" ON public.task_submissions FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "submissions_insert"     ON public.task_submissions FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+-- ──────────────────────────────────────────────────────────
+-- 7. PRIVATE CHATS & MESSAGES
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.conversations (
+  id           uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_a       uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  user_b       uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  last_message text DEFAULT '',
+  last_msg_at  timestamptz DEFAULT now(),
+  created_at   timestamptz DEFAULT now(),
+  UNIQUE(user_a, user_b)
+);
+
+ALTER TABLE public.conversations ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "conv_select_participant" ON public.conversations FOR SELECT TO authenticated
+  USING (auth.uid() = user_a OR auth.uid() = user_b);
+CREATE POLICY "conv_insert"            ON public.conversations FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_a OR auth.uid() = user_b);
+CREATE POLICY "conv_update_participant" ON public.conversations FOR UPDATE TO authenticated
+  USING (auth.uid() = user_a OR auth.uid() = user_b);
+
+CREATE TABLE IF NOT EXISTS public.messages (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  conversation_id uuid NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
+  sender_id       uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  content         text DEFAULT '',
+  type            text DEFAULT 'text',  -- text | image | audio | file | emoji
+  file_url        text DEFAULT NULL,
+  -- E2E: store encrypted content; key exchange via ECDH public keys on profiles
+  encrypted       boolean DEFAULT false,
+  read_at         timestamptz DEFAULT NULL,
+  created_at      timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "msg_select_participant" ON public.messages FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.conversations c
+      WHERE c.id = conversation_id AND (c.user_a = auth.uid() OR c.user_b = auth.uid())
+    )
+  );
+CREATE POLICY "msg_insert" ON public.messages FOR INSERT TO authenticated
+  WITH CHECK (auth.uid() = sender_id);
+CREATE POLICY "msg_update_read" ON public.messages FOR UPDATE TO authenticated
+  USING (auth.uid() = sender_id OR EXISTS (
+    SELECT 1 FROM public.conversations c
+    WHERE c.id = conversation_id AND (c.user_a = auth.uid() OR c.user_b = auth.uid())
+  ));
+
+-- ──────────────────────────────────────────────────────────
+-- 8. TEAM CHAT (Group)
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.team_messages (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  sender_id   uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  content     text DEFAULT '',
+  type        text DEFAULT 'text',  -- text | image | audio | file
+  file_url    text DEFAULT NULL,
+  created_at  timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.team_messages ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "team_msg_select" ON public.team_messages FOR SELECT TO authenticated USING (true);
+CREATE POLICY "team_msg_insert" ON public.team_messages FOR INSERT TO authenticated WITH CHECK (auth.uid() = sender_id);
+
+-- ──────────────────────────────────────────────────────────
+-- 9. MESSAGE READS (unread counts)
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.message_reads (
+  id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id         uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  conversation_id uuid NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
+  last_read_at    timestamptz DEFAULT now(),
+  UNIQUE(user_id, conversation_id)
+);
+
+ALTER TABLE public.message_reads ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "reads_own" ON public.message_reads FOR ALL TO authenticated USING (auth.uid() = user_id);
+
+-- ──────────────────────────────────────────────────────────
+-- 10. TYPING INDICATORS (ephemeral via Realtime Broadcast)
+-- Uses Supabase Realtime broadcast channels — no table needed.
+-- ──────────────────────────────────────────────────────────
+
+-- ──────────────────────────────────────────────────────────
+-- 11. NOTIFICATIONS
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.notifications (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  type        text NOT NULL,  -- task_approved | task_rejected | new_message | rank_up | title_granted | delete_request_result
+  title       text NOT NULL DEFAULT '',
+  body        text DEFAULT '',
+  link        text DEFAULT NULL,
+  read        boolean DEFAULT false,
+  created_at  timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "notif_own" ON public.notifications FOR ALL TO authenticated USING (auth.uid() = user_id);
+
+-- ──────────────────────────────────────────────────────────
+-- 12. DELETE REQUESTS
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.delete_requests (
+  id          uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     uuid NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
+  reason      text DEFAULT '',
+  status      text DEFAULT 'pending',  -- pending | approved | rejected
+  reviewed_at timestamptz DEFAULT NULL,
+  created_at  timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.delete_requests ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "delete_req_own"    ON public.delete_requests FOR SELECT TO authenticated USING (auth.uid() = user_id);
+CREATE POLICY "delete_req_insert" ON public.delete_requests FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+-- ──────────────────────────────────────────────────────────
+-- 13. PUBLIC KEYS (for E2E encryption)
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.public_keys (
+  user_id    uuid PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+  public_key text NOT NULL,  -- ECDH public key (base64)
+  updated_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.public_keys ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "pubkey_select_all" ON public.public_keys FOR SELECT TO authenticated USING (true);
+CREATE POLICY "pubkey_upsert_own" ON public.public_keys FOR ALL TO authenticated USING (auth.uid() = user_id);
+
+-- ──────────────────────────────────────────────────────────
+-- 14. ADMIN USERS
+-- ──────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS public.admin_users (
+  id         serial PRIMARY KEY,
+  username   text NOT NULL UNIQUE,
+  password   text NOT NULL,
+  created_at timestamptz DEFAULT now()
+);
+
+INSERT INTO public.admin_users (username, password)
+VALUES ('admin', 'AdminPass123!')
+ON CONFLICT DO NOTHING;
+
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "admin_select_anon" ON public.admin_users FOR SELECT TO anon, authenticated USING (true);
+
+-- ──────────────────────────────────────────────────────────
+-- 15. INDEXES for performance
+-- ──────────────────────────────────────────────────────────
+CREATE INDEX IF NOT EXISTS idx_messages_conversation ON public.messages(conversation_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_messages_sender       ON public.messages(sender_id);
+CREATE INDEX IF NOT EXISTS idx_team_messages_created ON public.team_messages(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_notifications_user    ON public.notifications(user_id, read, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tasks_user            ON public.tasks(user_id);
+CREATE INDEX IF NOT EXISTS idx_submissions_task      ON public.task_submissions(task_id);
+CREATE INDEX IF NOT EXISTS idx_users_points          ON public.users(points DESC);
+CREATE INDEX IF NOT EXISTS idx_conversations_users   ON public.conversations(user_a, user_b);
+
+-- ──────────────────────────────────────────────────────────
+-- 16. REALTIME
+-- ──────────────────────────────────────────────────────────
+ALTER PUBLICATION supabase_realtime ADD TABLE public.messages;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.team_messages;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.users;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.conversations;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.task_submissions;
+
+-- ──────────────────────────────────────────────────────────
+-- 17. STORAGE BUCKETS
+-- ──────────────────────────────────────────────────────────
+INSERT INTO storage.buckets (id, name, public) VALUES ('avatars',  'avatars',  true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public) VALUES ('banners',  'banners',  true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public) VALUES ('chat-files','chat-files',true) ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public) VALUES ('voice-notes','voice-notes',true) ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies
+DROP POLICY IF EXISTS "avatars_upload"  ON storage.objects;
+DROP POLICY IF EXISTS "avatars_update"  ON storage.objects;
+DROP POLICY IF EXISTS "avatars_read"    ON storage.objects;
+DROP POLICY IF EXISTS "banners_upload"  ON storage.objects;
+DROP POLICY IF EXISTS "chat_upload"     ON storage.objects;
+DROP POLICY IF EXISTS "chat_read"       ON storage.objects;
+
+CREATE POLICY "avatars_upload"  ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "avatars_update"  ON storage.objects FOR UPDATE TO authenticated USING (bucket_id = 'avatars' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "avatars_read"    ON storage.objects FOR SELECT TO public USING (bucket_id = 'avatars');
+CREATE POLICY "banners_upload"  ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id = 'banners' AND (storage.foldername(name))[1] = auth.uid()::text);
+CREATE POLICY "banners_read"    ON storage.objects FOR SELECT TO public USING (bucket_id = 'banners');
+CREATE POLICY "chat_upload"     ON storage.objects FOR INSERT TO authenticated WITH CHECK (bucket_id IN ('chat-files','voice-notes'));
+CREATE POLICY "chat_read"       ON storage.objects FOR SELECT TO authenticated USING (bucket_id IN ('chat-files','voice-notes'));
+
+-- ──────────────────────────────────────────────────────────
+-- 18. FUNCTION: auto-update points → rank
+-- ──────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.update_user_rank()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE public.users
+  SET rank_id = (
+    SELECT id FROM public.ranks
+    WHERE min_points <= NEW.points AND max_points >= NEW.points
+    ORDER BY min_points DESC LIMIT 1
+  )
+  WHERE id = NEW.id;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_update_rank ON public.users;
+CREATE TRIGGER trg_update_rank
+  AFTER UPDATE OF points ON public.users
+  FOR EACH ROW EXECUTE FUNCTION public.update_user_rank();
+
+-- ──────────────────────────────────────────────────────────
+-- 19. FUNCTION: create notification on rank up
+-- ──────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.notify_rank_up()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.rank_id IS DISTINCT FROM OLD.rank_id AND NEW.rank_id > OLD.rank_id THEN
+    INSERT INTO public.notifications(user_id, type, title, body)
+    SELECT NEW.id, 'rank_up',
+           '🎉 Rank Up!',
+           'You have reached a new rank: ' || (SELECT name FROM public.ranks WHERE id = NEW.rank_id);
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_notify_rank ON public.users;
+CREATE TRIGGER trg_notify_rank
+  AFTER UPDATE OF rank_id ON public.users
+  FOR EACH ROW EXECUTE FUNCTION public.notify_rank_up();
+
+-- ──────────────────────────────────────────────────────────
+-- 20. FUNCTION: update conversation last_message
+-- ──────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.update_conversation_last_msg()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE public.conversations
+  SET last_message = NEW.content, last_msg_at = NEW.created_at
+  WHERE id = NEW.conversation_id;
+  RETURN NEW;
+END;
+$$;
+
+DROP TRIGGER IF EXISTS trg_conversation_last_msg ON public.messages;
+CREATE TRIGGER trg_conversation_last_msg
+  AFTER INSERT ON public.messages
+  FOR EACH ROW EXECUTE FUNCTION public.update_conversation_last_msg();
+
+-- ============================================================
+-- DONE. Change admin credentials:
+-- UPDATE public.admin_users SET username='YOUR_ADMIN', password='STRONG_PASS' WHERE id=1;
+-- ============================================================
