@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>AM PRO | Platform</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+  <link rel="stylesheet" href="css/dashboard.css"/>
+</head>
+<body>
+
+<!-- ===================== SIDEBAR ===================== -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-mark">
+      <span>AP</span>
+    </div>
+    <span class="logo-text">AM PRO</span>
+  </div>
+
+  <nav class="sidebar-nav">
+    <button class="nav-item active" data-section="community" onclick="switchSection('community',this)">
+      <i class="fa-solid fa-hashtag"></i>
+      <span>Community</span>
+    </button>
+    <button class="nav-item" data-section="members" onclick="switchSection('members',this)">
+      <i class="fa-solid fa-users"></i>
+      <span>Members</span>
+      <span class="nav-badge" id="membersCount">0</span>
+    </button>
+    <button class="nav-item" data-section="tasks" onclick="switchSection('tasks',this)">
+      <i class="fa-solid fa-check-square"></i>
+      <span>Tasks</span>
+      <span class="nav-badge" id="tasksCount" style="display:none"></span>
+    </button>
+    <button class="nav-item" data-section="courses" onclick="switchSection('courses',this)">
+      <i class="fa-solid fa-graduation-cap"></i>
+      <span>Courses</span>
+    </button>
+    <button class="nav-item" data-section="chats" onclick="switchSection('chats',this)">
+      <i class="fa-solid fa-message"></i>
+      <span>Chats</span>
+      <span class="nav-badge unread" id="chatsUnread" style="display:none">0</span>
+    </button>
+    <button class="nav-item" data-section="profile" onclick="switchSection('profile',this)">
+      <i class="fa-solid fa-user"></i>
+      <span>Profile</span>
+    </button>
+    <button class="nav-item" data-section="settings" onclick="switchSection('settings',this)">
+      <i class="fa-solid fa-gear"></i>
+      <span>Settings</span>
+    </button>
+    <button class="nav-item admin-only" data-section="admin" onclick="switchSection('admin',this)" style="display:none">
+      <i class="fa-solid fa-shield-halved"></i>
+      <span>Admin</span>
+    </button>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user" id="sidebarUser" onclick="switchSection('profile',document.querySelector('[data-section=profile]'))">
+      <div class="sidebar-avatar" id="sidebarAvatar"></div>
+      <div class="sidebar-user-info">
+        <div class="sidebar-user-name" id="sidebarName">Loading…</div>
+        <div class="sidebar-user-role" id="sidebarRole">Member</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- Mobile Sidebar Toggle -->
+<button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleSidebar()">
+  <i class="fa-solid fa-bars"></i>
+</button>
+<div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar()"></div>
+
+<!-- ===================== MAIN CONTENT ===================== -->
+<main class="main-content" id="mainContent">
+
+  <!-- ===== COMMUNITY SECTION ===== -->
+  <section class="section active" id="section-community">
+    <div class="section-header-bar">
+      <div class="section-title-group">
+        <i class="fa-solid fa-hashtag"></i>
+        <h1>Community</h1>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
+        <button class="icon-btn" onclick="openNotifications()">
+          <i class="fa-solid fa-bell"></i>
+          <span class="notif-dot" id="notifDot" style="display:none"></span>
+        </button>
+      </div>
+    </div>
+
+    <div class="community-layout">
+      <div class="community-main">
+        <!-- Announcements -->
+        <div class="community-widget">
+          <div class="widget-header">
+            <h3><i class="fa-solid fa-bullhorn"></i> Announcements</h3>
+            <button class="admin-only btn-xs" id="addAnnouncementBtn" onclick="openAnnouncementModal()" style="display:none">
+              <i class="fa-solid fa-plus"></i> New
+            </button>
+          </div>
+          <div id="announcementsList" class="announcements-list">
+            <div class="skeleton-block" style="height:80px;margin-bottom:8px;border-radius:12px"></div>
+            <div class="skeleton-block" style="height:60px;border-radius:12px"></div>
+          </div>
+        </div>
+
+        <!-- Activity Feed -->
+        <div class="community-widget">
+          <div class="widget-header">
+            <h3><i class="fa-solid fa-bolt"></i> Activity Feed</h3>
+          </div>
+          <div id="activityFeed" class="activity-feed">
+            <div class="skeleton-block" style="height:52px;margin-bottom:6px;border-radius:10px"></div>
+            <div class="skeleton-block" style="height:52px;margin-bottom:6px;border-radius:10px"></div>
+            <div class="skeleton-block" style="height:52px;border-radius:10px"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="community-side">
+        <!-- Leaderboard -->
+        <div class="community-widget">
+          <div class="widget-header">
+            <h3><i class="fa-solid fa-trophy"></i> Leaderboard</h3>
+          </div>
+          <div id="leaderboardWidget" class="leaderboard-widget"></div>
+        </div>
+
+        <!-- Events -->
+        <div class="community-widget">
+          <div class="widget-header">
+            <h3><i class="fa-solid fa-calendar"></i> Events</h3>
+            <button class="admin-only btn-xs" onclick="openEventModal()" style="display:none"><i class="fa-solid fa-plus"></i> New</button>
+          </div>
+          <div id="eventsList" class="events-list">
+            <div class="empty-mini">No upcoming events</div>
+          </div>
+        </div>
+
+        <!-- Online Members -->
+        <div class="community-widget">
+          <div class="widget-header">
+            <h3><i class="fa-solid fa-circle" style="color:#22c55e;font-size:8px"></i> Online Now</h3>
+            <span id="onlineCount" class="count-badge">0</span>
+          </div>
+          <div id="onlineList" class="online-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MEMBERS SECTION ===== -->
+  <section class="section" id="section-members">
+    <div class="section-header-bar">
+      <div class="section-title-group">
+        <i class="fa-solid fa-users"></i>
+        <h1>Members</h1>
+        <span class="count-badge" id="membersTotal">0</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="openSearch()"><i class="fa-solid fa-magnifying-glass"></i></button>
+      </div>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="filter-bar">
+      <div class="search-input-wrap">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="membersSearch" placeholder="Search members…" oninput="filterMembers()"/>
+      </div>
+      <select id="rankFilter" class="filter-select" onchange="filterMembers()">
+        <option value="">All Ranks</option>
+        <option value="founder">Founder</option>
+        <option value="co-founder">Co-Founder</option>
+        <option value="admin">Admin</option>
+        <option value="moderator">Moderator</option>
+        <option value="senior_developer">Senior Developer</option>
+        <option value="developer">Developer</option>
+        <option value="designer">Designer</option>
+        <option value="member">Member</option>
+      </select>
+      <select id="sortMembers" class="filter-select" onchange="filterMembers()">
+        <option value="level">By Level</option>
+        <option value="name">By Name</option>
+        <option value="online">Online First</option>
+      </select>
+    </div>
+
+    <div id="membersGrid" class="members-grid">
+      <!-- Member cards rendered by JS -->
+    </div>
+  </section>
+
+  <!-- ===== TASKS SECTION ===== -->
+  <section class="section" id="section-tasks">
+    <div class="section-header-bar">
+      <div class="section-title-group">
+        <i class="fa-solid fa-check-square"></i>
+        <h1>Tasks</h1>
+      </div>
+      <div class="header-actions">
+        <div class="view-toggle">
+          <button class="view-btn active" id="kanbanViewBtn" onclick="switchTaskView('kanban',this)" title="Kanban">
+            <i class="fa-solid fa-table-columns"></i>
+          </button>
+          <button class="view-btn" id="listViewBtn" onclick="switchTaskView('list',this)" title="List">
+            <i class="fa-solid fa-list"></i>
+          </button>
+        </div>
+        <button class="btn-primary admin-only" id="addTaskBtn" onclick="openTaskModal()" style="display:none">
+          <i class="fa-solid fa-plus"></i> New Task
+        </button>
+      </div>
+    </div>
+
+    <!-- Progress Overview -->
+    <div class="tasks-overview" id="tasksOverview">
+      <div class="overview-stat">
+        <div class="stat-number" id="totalTasks">0</div>
+        <div class="stat-label">Total</div>
+      </div>
+      <div class="overview-stat">
+        <div class="stat-number todo" id="todoTasks">0</div>
+        <div class="stat-label">To Do</div>
+      </div>
+      <div class="overview-stat">
+        <div class="stat-number inprog" id="inprogressTasks">0</div>
+        <div class="stat-label">In Progress</div>
+      </div>
+      <div class="overview-stat">
+        <div class="stat-number done" id="doneTasks">0</div>
+        <div class="stat-label">Done</div>
+      </div>
+      <div class="overview-progress">
+        <div class="progress-label"><span>Overall Progress</span><span id="progressPct">0%</span></div>
+        <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progressBarFill"></div></div>
+      </div>
+    </div>
+
+    <!-- KANBAN VIEW -->
+    <div id="kanbanBoard" class="kanban-board">
+      <div class="kanban-col" id="col-todo">
+        <div class="kanban-col-header">
+          <span class="col-dot todo"></span>
+          <span>To Do</span>
+          <span class="col-count" id="cnt-todo">0</span>
+        </div>
+        <div class="kanban-cards" id="cards-todo"></div>
+      </div>
+      <div class="kanban-col" id="col-in_progress">
+        <div class="kanban-col-header">
+          <span class="col-dot in_progress"></span>
+          <span>In Progress</span>
+          <span class="col-count" id="cnt-in_progress">0</span>
+        </div>
+        <div class="kanban-cards" id="cards-in_progress"></div>
+      </div>
+      <div class="kanban-col" id="col-review">
+        <div class="kanban-col-header">
+          <span class="col-dot review"></span>
+          <span>Review</span>
+          <span class="col-count" id="cnt-review">0</span>
+        </div>
+        <div class="kanban-cards" id="cards-review"></div>
+      </div>
+      <div class="kanban-col" id="col-done">
+        <div class="kanban-col-header">
+          <span class="col-dot done"></span>
+          <span>Done</span>
+          <span class="col-count" id="cnt-done">0</span>
+        </div>
+        <div class="kanban-cards" id="cards-done"></div>
+      </div>
+    </div>
+
+    <!-- LIST VIEW -->
+    <div id="listView" class="list-view" style="display:none">
+      <div id="taskListItems" class="task-list-items"></div>
+    </div>
+  </section>
+
+  <!-- ===== COURSES SECTION ===== -->
+  <section class="section" id="section-courses">
+    <div class="section-header-bar">
+      <div class="section-title-group">
+        <i class="fa-solid fa-graduation-cap"></i>
+        <h1>Courses</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn-primary admin-only" onclick="openCourseModal()" style="display:none">
+          <i class="fa-solid fa-plus"></i> Add Course
+        </button>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="courses-progress-bar-container" id="coursesProgressBar">
+      <div class="progress-label">
+        <span>Your Progress</span>
+        <span id="courseProgressPct">0 / 0 Completed</span>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill green" id="courseProgressFill"></div></div>
+    </div>
+
+    <div id="coursesGrid" class="courses-grid"></div>
+  </section>
+
+  <!-- ===== CHATS SECTION ===== -->
+  <section class="section" id="section-chats">
+    <div class="chat-layout">
+      <!-- Conversations List -->
+      <div class="chat-sidebar" id="chatSidebar">
+        <div class="chat-sidebar-header">
+          <h2>Messages</h2>
+          <button class="icon-btn" onclick="switchChatView('community')">
+            <i class="fa-solid fa-people-group"></i>
+          </button>
+        </div>
+        <div class="chat-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="chatSearch" placeholder="Search conversations…" oninput="filterConversations()"/>
+        </div>
+        <!-- Community Chat -->
+        <div class="chat-item community-chat-item active" onclick="switchChatView('community')">
+          <div class="chat-item-avatar community">
+            <i class="fa-solid fa-people-group"></i>
+          </div>
+          <div class="chat-item-info">
+            <div class="chat-item-name">Team Community</div>
+            <div class="chat-item-preview" id="communityLastMsg">Everyone is here</div>
+          </div>
+          <div class="chat-item-meta">
+            <span class="online-dot"></span>
+          </div>
+        </div>
+        <!-- DM List -->
+        <div class="chat-section-label">Direct Messages</div>
+        <div id="dmList" class="dm-list"></div>
+      </div>
+
+      <!-- Chat Window -->
+      <div class="chat-window" id="chatWindow">
+        <!-- Community Chat -->
+        <div class="chat-view active" id="chatView-community">
+          <div class="chat-header">
+            <div class="chat-header-left">
+              <div class="chat-avatar community"><i class="fa-solid fa-people-group"></i></div>
+              <div>
+                <div class="chat-name">Team Community</div>
+                <div class="chat-status"><span class="online-dot"></span> <span id="communityOnlineCount">0</span> online</div>
+              </div>
+            </div>
+            <div class="chat-header-actions">
+              <button class="icon-btn" onclick="searchInChat()"><i class="fa-solid fa-magnifying-glass"></i></button>
+              <button class="icon-btn"><i class="fa-solid fa-thumbtack"></i></button>
+              <button class="icon-btn"><i class="fa-solid fa-users"></i></button>
+            </div>
+          </div>
+          <div class="messages-area" id="communityMessages">
+            <div class="messages-loading">
+              <div class="skeleton-block" style="height:60px;margin-bottom:8px;border-radius:12px"></div>
+              <div class="skeleton-block" style="height:44px;margin-bottom:8px;border-radius:12px;width:70%"></div>
+              <div class="skeleton-block" style="height:80px;border-radius:12px"></div>
+            </div>
+          </div>
+          <div class="chat-input-area" id="communityInputArea">
+            <div class="typing-indicator" id="communityTyping" style="display:none">
+              <span></span><span></span><span></span>
+              <span class="typing-text">Someone is typing…</span>
+            </div>
+            <div class="input-toolbar">
+              <button class="input-tool-btn" onclick="openAttachment('community')" title="Attach"><i class="fa-solid fa-paperclip"></i></button>
+              <button class="input-tool-btn" onclick="openImagePicker('community')" title="Image"><i class="fa-solid fa-image"></i></button>
+              <button class="input-tool-btn" onclick="startVoiceRecording('community')" title="Voice" id="voiceBtn-community"><i class="fa-solid fa-microphone"></i></button>
+            </div>
+            <div class="reply-preview" id="replyPreview-community" style="display:none">
+              <span class="reply-preview-text" id="replyPreviewText-community"></span>
+              <button onclick="cancelReply('community')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="input-row">
+              <button class="emoji-btn" onclick="toggleEmojiPicker('community')" title="Emoji"><i class="fa-regular fa-face-smile"></i></button>
+              <button class="sticker-btn" onclick="toggleStickerPanel('community')" title="Stickers">
+                <i class="fa-solid fa-note-sticky"></i>
+              </button>
+              <textarea id="communityMsgInput" class="msg-input" placeholder="Message #team-community…" rows="1"
+                onkeydown="handleMsgKey(event,'community')" oninput="autoResize(this);broadcastTyping('community')"></textarea>
+              <button class="send-btn" onclick="sendMessage('community')" id="sendBtn-community">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- DM View Template -->
+        <div class="chat-view" id="chatView-dm" style="display:none">
+          <div class="chat-header">
+            <div class="chat-header-left">
+              <button class="icon-btn back-btn" onclick="backToList()"><i class="fa-solid fa-arrow-left"></i></button>
+              <div class="chat-avatar" id="dmHeaderAvatar"></div>
+              <div>
+                <div class="chat-name" id="dmHeaderName">User</div>
+                <div class="chat-status" id="dmHeaderStatus"><span class="offline-dot"></span> Offline</div>
+              </div>
+            </div>
+            <div class="chat-header-actions">
+              <button class="icon-btn" onclick="openMemberProfile(currentDmUserId)"><i class="fa-solid fa-user"></i></button>
+            </div>
+          </div>
+
+          <!-- First-time stickers -->
+          <div class="first-time-stickers" id="firstTimeStickers" style="display:none">
+            <p>Say hello to start the conversation!</p>
+            <div class="quick-stickers">
+              <button onclick="sendQuickSticker('wave')">👋 Wave</button>
+              <button onclick="sendQuickSticker('hi')">👋 Say Hi</button>
+              <button onclick="sendQuickSticker('smile')">😊 Smile</button>
+              <button onclick="sendQuickSticker('welcome')">🤝 Welcome</button>
+            </div>
+          </div>
+
+          <div class="messages-area" id="dmMessages"></div>
+          <div class="chat-input-area">
+            <div class="typing-indicator" id="dmTyping" style="display:none">
+              <span></span><span></span><span></span>
+              <span class="typing-text" id="dmTypingText">Typing…</span>
+            </div>
+            <div class="input-toolbar">
+              <button class="input-tool-btn" onclick="openAttachment('dm')"><i class="fa-solid fa-paperclip"></i></button>
+              <button class="input-tool-btn" onclick="openImagePicker('dm')"><i class="fa-solid fa-image"></i></button>
+              <button class="input-tool-btn" onclick="startVoiceRecording('dm')" id="voiceBtn-dm"><i class="fa-solid fa-microphone"></i></button>
+            </div>
+            <div class="reply-preview" id="replyPreview-dm" style="display:none">
+              <span class="reply-preview-text" id="replyPreviewText-dm"></span>
+              <button onclick="cancelReply('dm')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="input-row">
+              <button class="emoji-btn" onclick="toggleEmojiPicker('dm')"><i class="fa-regular fa-face-smile"></i></button>
+              <button class="sticker-btn" onclick="toggleStickerPanel('dm')"><i class="fa-solid fa-note-sticky"></i></button>
+              <textarea id="dmMsgInput" class="msg-input" placeholder="Message…" rows="1"
+                onkeydown="handleMsgKey(event,'dm')" oninput="autoResize(this);broadcastTyping('dm')"></textarea>
+              <button class="send-btn" onclick="sendMessage('dm')">
+                <i class="fa-solid fa-paper-plane"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PROFILE SECTION ===== -->
+  <section class="section" id="section-profile">
+    <div class="section-header-bar">
+      <div class="section-title-group">
+        <i class="fa-solid fa-user"></i>
+        <h1>My Profile</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn-secondary" onclick="toggleProfilePreview()">
+          <i class="fa-solid fa-eye"></i> Preview
+        </button>
+      </div>
+    </div>
+
+    <div class="profile-editor">
+      <!-- Banner -->
+      <div class="profile-banner-editor" id="profileBannerEditor">
+        <div class="banner-container" id="myBannerContainer">
+          <div class="banner-gradient" id="myBannerGradient"></div>
+          <img class="banner-img" id="myBannerImg" src="" alt="" style="display:none"/>
+          <button class="change-banner-btn" onclick="document.getElementById('bannerFileInput').click()">
+            <i class="fa-solid fa-camera"></i> Change Banner
+          </button>
+          <input type="file" id="bannerFileInput" accept="image/*" style="display:none" onchange="uploadBanner(this)"/>
+        </div>
+        <!-- Avatar on top of banner -->
+        <div class="avatar-on-banner">
+          <div class="avatar-ring" id="myAvatarRing">
+            <div class="avatar-circle large" id="myAvatarCircle">
+              <img id="myAvatarImg" src="" alt="" style="display:none"/>
+              <span id="myAvatarInitial"></span>
+            </div>
+            <button class="change-avatar-btn" onclick="document.getElementById('avatarFileInput').click()">
+              <i class="fa-solid fa-camera"></i>
+            </button>
+            <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="uploadAvatar(this)"/>
+          </div>
+          <div class="avatar-info">
+            <div class="profile-name-row">
+              <h2 id="myProfileName"></h2>
+              <span class="verify-badge-icon" id="myVerifyBadge" style="display:none"><i class="fa-solid fa-circle-check"></i></span>
+            </div>
+            <div id="myRankBadge" class="rank-badge-pill"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Fields -->
+      <div class="profile-fields">
+        <div class="field-group">
+          <label>Display Name</label>
+          <input type="text" id="editName" class="field-input" placeholder="Your name…" maxlength="50"/>
+        </div>
+        <div class="field-group">
+          <label>Username</label>
+          <div class="input-prefix-wrap">
+            <span class="input-prefix">@</span>
+            <input type="text" id="editUsername" class="field-input with-prefix" placeholder="username" maxlength="30"/>
+          </div>
+        </div>
+        <div class="field-group">
+          <label>Bio <span class="char-count" id="bioCharCount">0/160</span></label>
+          <textarea id="editBio" class="field-textarea" placeholder="Tell the team about yourself…" maxlength="160" oninput="updateBioCount()"></textarea>
+        </div>
+        <div class="field-group">
+          <label>Field / Specialty</label>
+          <input type="text" id="editField" class="field-input" placeholder="e.g. Frontend Developer…" maxlength="50"/>
+        </div>
+        <button class="btn-primary" onclick="saveProfile()" id="saveProfileBtn">
+          <i class="fa-solid fa-check"></i> Save Profile
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SETTINGS SECTION ===== -->
+  <section class="section" id="section-settings">
+    <div class="section-header-bar">
+      <div class="section-title-group">
+        <i class="fa-solid fa-gear"></i>
+        <h1>Settings</h1>
+      </div>
+    </div>
+
+    <div class="settings-layout">
+      <!-- Account Settings -->
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <i class="fa-solid fa-lock"></i>
+          <h3>Account Security</h3>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-info">
+            <div class="settings-item-label">Password</div>
+            <div class="settings-item-desc">Change your account password</div>
+          </div>
+          <button class="btn-secondary sm" onclick="openChangePassword()">Change</button>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-info">
+            <div class="settings-item-label">Email</div>
+            <div class="settings-item-desc" id="settingsEmail">—</div>
+          </div>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-info">
+            <div class="settings-item-label">Sign Out</div>
+            <div class="settings-item-desc">Log out of your account</div>
+          </div>
+          <button class="btn-danger sm" onclick="signOut()">Sign Out</button>
+        </div>
+      </div>
+
+      <!-- Notifications Settings -->
+      <div class="settings-card">
+        <div class="settings-card-header">
+          <i class="fa-solid fa-bell"></i>
+          <h3>Notifications</h3>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-info">
+            <div class="settings-item-label">New Messages</div>
+            <div class="settings-item-desc">Notify when you receive a message</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="notifMessages" checked/>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-info">
+            <div class="settings-item-label">Task Assignments</div>
+            <div class="settings-item-desc">Notify when a task is assigned to you</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="notifTasks" checked/>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-info">
+            <div class="settings-item-label">Announcements</div>
+            <div class="settings-item-desc">Notify for team announcements</div>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="notifAnnouncements" checked/>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Deletion Request -->
+      <div class="settings-card danger-card">
+        <div class="settings-card-header">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <h3>Danger Zone</h3>
+        </div>
+        <div class="settings-item">
+          <div class="settings-item-info">
+            <div class="settings-item-label">Delete Account</div>
+            <div class="settings-item-desc">Request account deletion — reviewed by admin</div>
+          </div>
+          <button class="btn-danger sm" onclick="openDeleteRequest()" id="deleteRequestBtn">Request Deletion</button>
+        </div>
+        <!-- Deletion Status -->
+        <div id="deletionStatusArea" style="display:none" class="deletion-status-area">
+          <div class="deletion-status-card" id="deletionStatusCard">
+            <i class="fa-solid fa-clock"></i>
+            <div>
+              <div class="deletion-status-title" id="deletionStatusTitle">Request Pending</div>
+              <div class="deletion-status-desc" id="deletionStatusDesc">Your deletion request is under review by the admin team.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== ADMIN SECTION ===== -->
+  <section class="section" id="section-admin">
+    <div class="section-header-bar">
+      <div class="section-title-group">
+        <i class="fa-solid fa-shield-halved"></i>
+        <h1>Admin Panel</h1>
+      </div>
+    </div>
+
+    <div class="admin-tabs">
+      <button class="admin-tab active" onclick="switchAdminTab('members',this)">Members</button>
+      <button class="admin-tab" onclick="switchAdminTab('tasks',this)">Tasks</button>
+      <button class="admin-tab" onclick="switchAdminTab('courses',this)">Courses</button>
+      <button class="admin-tab" onclick="switchAdminTab('deletions',this)">Deletions</button>
+      <button class="admin-tab" onclick="switchAdminTab('announcements',this)">Announcements</button>
+    </div>
+
+    <!-- Admin: Members -->
+    <div class="admin-panel" id="adminPanel-members">
+      <div id="adminMembersList" class="admin-list"></div>
+    </div>
+
+    <!-- Admin: Tasks -->
+    <div class="admin-panel" id="adminPanel-tasks" style="display:none">
+      <div class="admin-panel-header">
+        <button class="btn-primary" onclick="openTaskModal()"><i class="fa-solid fa-plus"></i> New Task</button>
+      </div>
+      <div id="adminTasksList" class="admin-list"></div>
+    </div>
+
+    <!-- Admin: Courses -->
+    <div class="admin-panel" id="adminPanel-courses" style="display:none">
+      <div class="admin-panel-header">
+        <button class="btn-primary" onclick="openCourseModal()"><i class="fa-solid fa-plus"></i> New Course</button>
+      </div>
+      <div id="adminCoursesList" class="admin-list"></div>
+    </div>
+
+    <!-- Admin: Deletions -->
+    <div class="admin-panel" id="adminPanel-deletions" style="display:none">
+      <div id="adminDeletionsList" class="admin-list"></div>
+    </div>
+
+    <!-- Admin: Announcements -->
+    <div class="admin-panel" id="adminPanel-announcements" style="display:none">
+      <div class="admin-panel-header">
+        <button class="btn-primary" onclick="openAnnouncementModal()"><i class="fa-solid fa-plus"></i> New Announcement</button>
+      </div>
+      <div id="adminAnnouncementsList" class="admin-list"></div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ===================== MODALS ===================== -->
+
+<!-- Profile Modal (view member) -->
+<div class="modal-overlay" id="memberProfileOverlay" onclick="closeMemberProfile(event)">
+  <div class="modal profile-modal" id="memberProfileModal">
+    <div class="profile-modal-banner" id="pmBanner">
+      <div class="profile-modal-banner-gradient" id="pmBannerGrad"></div>
+      <img class="profile-modal-banner-img" id="pmBannerImg" style="display:none"/>
+    </div>
+    <button class="modal-close" onclick="closeMemberProfileBtn()"><i class="fa-solid fa-xmark"></i></button>
+    <div class="profile-modal-body">
+      <div class="profile-modal-avatar-wrap">
+        <div class="avatar-circle xlarge" id="pmAvatar"></div>
+        <div class="verify-badge-icon" id="pmVerify" style="display:none"><i class="fa-solid fa-circle-check"></i></div>
+      </div>
+      <div class="profile-modal-info">
+        <h2 id="pmName"></h2>
+        <div class="pm-username" id="pmUsername"></div>
+        <div id="pmRankBadge" class="rank-badge-pill" style="margin:8px auto"></div>
+        <div class="pm-bio" id="pmBio"></div>
+        <div class="pm-meta">
+          <div class="pm-meta-item"><i class="fa-solid fa-briefcase"></i> <span id="pmField"></span></div>
+          <div class="pm-meta-item"><i class="fa-solid fa-star"></i> Level <span id="pmLevel"></span></div>
+          <div class="pm-status" id="pmStatus"></div>
+        </div>
+        <button class="btn-primary w-full" id="pmMessageBtn" onclick="openDmWithUser()">
+          <i class="fa-solid fa-message"></i> Send Message
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Task Modal -->
+<div class="modal-overlay" id="taskModalOverlay" onclick="closeTaskModal(event)">
+  <div class="modal form-modal" id="taskModal">
+    <div class="modal-header">
+      <h3 id="taskModalTitle">New Task</h3>
+      <button class="modal-close" onclick="closeTaskModalBtn()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="taskModalId"/>
+      <div class="field-group">
+        <label>Title</label>
+        <input type="text" id="taskTitle" class="field-input" placeholder="Task title…"/>
+      </div>
+      <div class="field-group">
+        <label>Description</label>
+        <textarea id="taskBody" class="field-textarea" placeholder="Task description…"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="field-group">
+          <label>Priority</label>
+          <select id="taskPriority" class="field-select">
+            <option value="low">🟢 Low</option>
+            <option value="medium" selected>🟡 Medium</option>
+            <option value="high">🟠 High</option>
+            <option value="urgent">🔴 Urgent</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Status</label>
+          <select id="taskStatus" class="field-select">
+            <option value="todo">To Do</option>
+            <option value="in_progress">In Progress</option>
+            <option value="review">Review</option>
+            <option value="done">Done</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="field-group">
+          <label>Due Date</label>
+          <input type="date" id="taskDueDate" class="field-input"/>
+        </div>
+        <div class="field-group">
+          <label>Assign To</label>
+          <select id="taskAssignee" class="field-select">
+            <option value="">Select member…</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-group">
+        <label>Link (optional)</label>
+        <input type="url" id="taskLink" class="field-input" placeholder="https://…"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeTaskModalBtn()">Cancel</button>
+      <button class="btn-primary" onclick="saveTask()" id="saveTaskBtn">Create Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- Course Modal -->
+<div class="modal-overlay" id="courseModalOverlay" onclick="closeCourseModal(event)">
+  <div class="modal form-modal" id="courseModal">
+    <div class="modal-header">
+      <h3 id="courseModalTitle">New Course</h3>
+      <button class="modal-close" onclick="closeCourseModalBtn()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="courseModalId"/>
+      <div class="field-group">
+        <label>Title</label>
+        <input type="text" id="courseTitle" class="field-input" placeholder="Course title…"/>
+      </div>
+      <div class="field-group">
+        <label>Description</label>
+        <textarea id="courseBody" class="field-textarea" placeholder="Course description…"></textarea>
+      </div>
+      <div class="field-group">
+        <label>Course Link</label>
+        <input type="url" id="courseLink" class="field-input" placeholder="https://…"/>
+      </div>
+      <div class="field-group">
+        <label>Category</label>
+        <input type="text" id="courseCategory" class="field-input" placeholder="e.g. development, design…"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeCourseModalBtn()">Cancel</button>
+      <button class="btn-primary" onclick="saveCourse()" id="saveCourseBtn">Save Course</button>
+    </div>
+  </div>
+</div>
+
+<!-- Announcement Modal -->
+<div class="modal-overlay" id="announcementModalOverlay" onclick="closeAnnouncementModal(event)">
+  <div class="modal form-modal" id="announcementModal">
+    <div class="modal-header">
+      <h3>New Announcement</h3>
+      <button class="modal-close" onclick="closeAnnouncementModalBtn()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <label>Title</label>
+        <input type="text" id="announcementTitle" class="field-input" placeholder="Announcement title…"/>
+      </div>
+      <div class="field-group">
+        <label>Body</label>
+        <textarea id="announcementBody" class="field-textarea" rows="4" placeholder="Announcement content…"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="field-group">
+          <label>Type</label>
+          <select id="announcementType" class="field-select">
+            <option value="info">ℹ️ Info</option>
+            <option value="success">✅ Success</option>
+            <option value="warning">⚠️ Warning</option>
+            <option value="danger">🚨 Danger</option>
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Pin</label>
+          <select id="announcementPinned" class="field-select">
+            <option value="false">No</option>
+            <option value="true">Yes</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeAnnouncementModalBtn()">Cancel</button>
+      <button class="btn-primary" onclick="saveAnnouncement()">Post</button>
+    </div>
+  </div>
+</div>
+
+<!-- Change Password Modal -->
+<div class="modal-overlay" id="passwordModalOverlay" onclick="closePasswordModal(event)">
+  <div class="modal form-modal sm" id="passwordModal">
+    <div class="modal-header">
+      <h3>Change Password</h3>
+      <button class="modal-close" onclick="closePasswordModalBtn()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="field-group">
+        <label>New Password</label>
+        <input type="password" id="newPassword" class="field-input" placeholder="Min 6 characters…"/>
+      </div>
+      <div class="field-group">
+        <label>Confirm Password</label>
+        <input type="password" id="confirmPassword" class="field-input" placeholder="Confirm new password…"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closePasswordModalBtn()">Cancel</button>
+      <button class="btn-primary" onclick="changePassword()">Update Password</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Request Modal -->
+<div class="modal-overlay" id="deleteModalOverlay" onclick="closeDeleteModal(event)">
+  <div class="modal form-modal sm" id="deleteModal">
+    <div class="modal-header">
+      <h3>Request Account Deletion</h3>
+      <button class="modal-close" onclick="closeDeleteModalBtn()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="warning-banner">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        <p>This request will be sent to the admin team for review. You will not be deleted immediately.</p>
+      </div>
+      <div class="field-group">
+        <label>Reason (optional)</label>
+        <textarea id="deleteReason" class="field-textarea" rows="3" placeholder="Why do you want to delete your account?"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeDeleteModalBtn()">Cancel</button>
+      <button class="btn-danger" onclick="submitDeletionRequest()">Send Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- Emoji Picker Panel -->
+<div class="emoji-panel" id="emojiPanel" style="display:none">
+  <div class="emoji-grid" id="emojiGrid"></div>
+</div>
+
+<!-- Sticker Panel -->
+<div class="sticker-panel" id="stickerPanel" style="display:none">
+  <div class="sticker-tabs" id="stickerTabs"></div>
+  <div class="sticker-grid" id="stickerGrid"></div>
+</div>
+
+<!-- Notifications Drawer -->
+<div class="notifications-drawer" id="notificationsDrawer" style="display:none">
+  <div class="drawer-header">
+    <h3>Notifications</h3>
+    <button class="btn-xs" onclick="markAllNotificationsRead()">Mark all read</button>
+    <button class="icon-btn" onclick="closeNotifications()"><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div id="notificationsList" class="notifications-list"></div>
+</div>
+
+<!-- Global Search Modal -->
+<div class="modal-overlay" id="searchOverlay" onclick="closeSearch(event)">
+  <div class="modal search-modal">
+    <div class="search-input-wrap large">
+      <i class="fa-solid fa-magnifying-glass"></i>
+      <input type="text" id="globalSearchInput" placeholder="Search members, tasks, courses…" oninput="globalSearch()"/>
+      <kbd>Esc</kbd>
+    </div>
+    <div id="searchResults" class="search-results">
+      <div class="search-hint">Start typing to search…</div>
+    </div>
+  </div>
+</div>
+
+<!-- Voice Recording UI -->
+<div class="voice-recording-ui" id="voiceRecordingUI" style="display:none">
+  <div class="recording-pulse"></div>
+  <div class="recording-time" id="recordingTime">0:00</div>
+  <div class="waveform" id="waveformBars">
+    <span></span><span></span><span></span><span></span><span></span>
+    <span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <button class="btn-danger sm" onclick="stopRecording()"><i class="fa-solid fa-stop"></i> Stop</button>
+  <button class="btn-secondary sm" onclick="cancelRecording()"><i class="fa-solid fa-xmark"></i> Cancel</button>
+</div>
+
+<!-- Toast Container -->
+<div id="toastContainer" class="toast-container"></div>
+
+<!-- Hidden file inputs for chat media -->
+<input type="file" id="chatImageInput" accept="image/*,video/*" style="display:none" onchange="sendMediaFile(this)"/>
+<input type="file" id="chatFileInput" accept="*/*" style="display:none" onchange="sendFileAttachment(this)"/>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/init.js"></script>
+<script src="js/realtime.js"></script>
+<script src="js/community.js"></script>
+<script src="js/tasks.js"></script>
+<script src="js/courses.js"></script>
+<script src="js/chat.js"></script>
+<script src="js/profile-settings.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>
