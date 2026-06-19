@@ -132,9 +132,15 @@ window.signup = async function () {
   show("Creating account...", "success");
 
   try {
-    // STEP 1: Create auth user
+    // STEP 1: Create auth user — بنبعت البيانات كـ metadata عشان الـ trigger يأخدها
     console.log("[AM-PRO] Calling sb.auth.signUp...");
-    var r1 = await sb.auth.signUp({ email: email, password: password });
+    var r1 = await sb.auth.signUp({
+      email:    email,
+      password: password,
+      options: {
+        data: { name, username, gender, field }
+      }
+    });
     console.log("[AM-PRO] signUp response:", JSON.stringify(r1));
 
     if (r1.error) {
@@ -144,7 +150,6 @@ window.signup = async function () {
     }
 
     if (!r1.data || !r1.data.user) {
-      // Email confirmation enabled — user was created but session not returned
       console.warn("[AM-PRO] signUp: no user object (email confirmation required)");
       show("Account created! Check your email to confirm, then sign in.", "success");
       btn.textContent = "Create Account";
@@ -155,18 +160,16 @@ window.signup = async function () {
     var uid = r1.data.user.id;
     console.log("[AM-PRO] Auth user created. UID:", uid);
 
-    // STEP 2: Insert into users table
-    // FIX: pass an ARRAY — required by supabase-js v2
-    console.log("[AM-PRO] Inserting into users table...");
-    var r2 = await sb.from("users").insert([{
+    // STEP 2: upsert — لو الـ trigger سبقنا نحدّث البيانات، لو لأ نعملها
+    console.log("[AM-PRO] Upserting into users table...");
+    var r2 = await sb.from("users").upsert({
       id:       uid,
-      uid:      uid,
+      email:    email,
       name:     name,
       username: username,
       gender:   gender,
-      field:    field,
-      email:    email
-    }]);
+      field:    field
+    }, { onConflict: "id" });
 
     console.log("[AM-PRO] insert response:", JSON.stringify(r2));
 
