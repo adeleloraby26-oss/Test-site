@@ -1,13 +1,8 @@
 // ====================================================
-// SUPABASE INIT — v2 UMD
+// auth.js — AM PRO Platform
+// SUPABASE CLIENT: sb مُعرَّف في config.js
 // ====================================================
-const { createClient } = supabase;
-const sb = createClient(
-  "YOUR_SUPABASE_URL",
-  "YOUR_SUPABASE_ANON_KEY"
-);
-
-console.log("[AM-PRO] Supabase client initialized");
+console.log("[AM-PRO] auth.js loaded — using sb from config.js");
 
 // ====================================================
 // TOAST NOTIFICATION
